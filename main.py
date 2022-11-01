@@ -6,6 +6,7 @@ def get_file() -> list[str]:
     with open('./.people.txt', 'r+') as file:
         data = file.read()
         names = data.split('\n')
+    names = list(filter(lambda name: len(name) > 0, names))
     return names
 
 def main() -> None:
