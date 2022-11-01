@@ -1,5 +1,5 @@
-import random
-import os
+from random import random
+from os import system as os_system, name as os_name
 
 def get_file() -> list[str]:
     names = []
@@ -9,13 +9,16 @@ def get_file() -> list[str]:
     names = list(filter(lambda name: len(name) > 0, names))
     return names
 
+def randomize (items: list[str]) -> list[str]:
+    return list(sorted(items, key=lambda x: .5 - random()))
+
+
 def main() -> None:
-    os.system('cls' if os.name == 'nt' else 'clear')
+    os_system('cls' if os_name == 'nt' else 'clear')
     names = get_file()
-    while len(names) > 0:
-        index = random.randint(0, len(names) - 1)
-        print(names[index])
-        del names[index]
+    names = randomize(names)
+
+    print('\n'.join(names))
 
 if __name__ == '__main__':
     main()
