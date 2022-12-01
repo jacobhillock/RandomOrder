@@ -10,6 +10,8 @@ def get_args () -> argparse.Namespace:
         )
     parser.add_argument('exclude', type=str, nargs='*', 
         help='List of people to exclude')
+    parser.add_argument('-f', '--fuzzyExclude', action='store_true',
+        help='Flag to use the exclude list as a fuzzy (not need to include whole name) or not')
     args = parser.parse_args()
     return args
 
@@ -24,8 +26,21 @@ def get_file() -> list[str]:
 def randomize (items: list[str]) -> list[str]:
     return list(sorted(items, key=lambda x: .5 - random()))
 
-def clean (items: list[str], exclude: list[str]) -> list[str]:
-    return [item for item in items if item not in exclude]
+def clean (names: list[str], exclude_list: list[str], fuzzy: bool) -> list[str]:
+    if fuzzy:
+        search_results = [*names]
+        for exclude in exclude_list:
+            matches = []
+            for name in names:
+                if exclude.lower() in name.lower():
+                    matches.append(name)
+            if len(matches) > 1:
+                print(f'{exclude} had multiple matches: {", ".join(matches)}. No matches will be removed')
+            elif len(matches) == 1:
+                search_results = list(filter(lambda name: name not in matches, search_results))
+        return search_results
+    else:
+        return [item for item in names if item not in exclude_list]
 
 def transform_notes(notes: dict[str, list[str]]) -> str:
     data = ''
@@ -67,7 +82,7 @@ def main() -> None:
     args = get_args()
 
     names = get_file()
-    names = clean(names, args.exclude)
+    names = clean(names, args.exclude, args.fuzzyExclude)
     names = randomize(names)
 
     print(', '.join(map(lambda name: f'"{name}"', names)))
