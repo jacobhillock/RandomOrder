@@ -82,7 +82,9 @@ def replace_key_tokens(notes: str) -> str:
     
     for key, value in tokens.items():
         print(key)
-        regex = re.compile(f'((?<=#^| )({key})(?= |$))', re.MULTILINE)
+        # `?<=` means to capture after this group
+        # `?=` means to capture after this group
+        regex = re.compile(f'((?<=\s)({key})(?=\s))')
         notes = re.sub(regex, value, notes)
 
     return notes
