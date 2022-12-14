@@ -1,7 +1,10 @@
 from random import random
 from os import system as os_system, name as os_name
+from os.path import exists
 import argparse
 from datetime import datetime
+from json import loads as loads_json
+import re
 
 def get_args () -> argparse.Namespace:
     parser = argparse.ArgumentParser(
@@ -12,6 +15,8 @@ def get_args () -> argparse.Namespace:
         help='List of people to exclude')
     parser.add_argument('-f', '--fuzzyExclude', action='store_true',
         help='Flag to use the exclude list as a fuzzy (not need to include whole name) or not')
+    parser.add_argument('-t', '--testing', action='store_true',
+        help='Flag to write to a different file if testing new features')
     args = parser.parse_args()
     return args
 
@@ -42,6 +47,16 @@ def clean (names: list[str], exclude_list: list[str], fuzzy: bool) -> list[str]:
     else:
         return [item for item in names if item not in exclude_list]
 
+def add_list_header (line):
+    list_regex = re.compile('^\s{2,}-')
+    line += '\n'
+
+    print(list_regex.findall(line))
+
+    if (list_regex.findall(line)):
+        return line
+    return '- ' + line
+
 def transform_notes(notes: dict[str, list[str]]) -> str:
     data = ''
     for key, value in notes.items():
@@ -50,12 +65,29 @@ def transform_notes(notes: dict[str, list[str]]) -> str:
         notes = list(filter(lambda note: note != '', value))
         if len(notes) == 0:
             notes = ['No notes or not present']
-        data += ''.join(map(lambda note: f'- {note}\n', notes))
+        data += ''.join(map(add_list_header, notes))
         data += '\n'
     
     return data
 
-def take_notes(people: list[str]) -> None:
+def replace_key_tokens(notes: str) -> str:
+    if not exists('./.tokens.json'):
+        return notes
+    tokens = {}
+    with open('./.tokens.json', 'r') as file:
+        tokens = loads_json(file.read())
+    
+    print(notes)
+    print(tokens)
+    
+    for key, value in tokens.items():
+        print(key)
+        regex = re.compile(f'((?<=#^| )({key})(?= |$))', re.MULTILINE)
+        notes = re.sub(regex, value, notes)
+
+    return notes
+
+def take_notes(people: list[str], testing: bool) -> None:
     data = {}
 
     for person in people:
@@ -68,12 +100,14 @@ def take_notes(people: list[str]) -> None:
                 break
     
     print()
-    print(transform_notes(data))
+    notes = transform_notes(data)
+    notes = replace_key_tokens(notes)
+    print(notes)
     date = datetime.now()
 
-    file_name = f'./notes/{date.date().isoformat()}.md'
+    file_name = f'./notes/{date.date().isoformat()}{"_t" if testing else ""}.md'
     with open(file_name, 'w+') as file:
-        file.write(transform_notes(data))
+        file.write(notes)
     
     print(f'wrote to file: "{file_name}"')
 
@@ -85,10 +119,10 @@ def main() -> None:
     names = clean(names, args.exclude, args.fuzzyExclude)
     names = randomize(names)
 
-    print(', '.join(map(lambda name: f'"{name}"', names)))
+    print(', '.join( names))
     print()
 
-    take_notes(names)
+    take_notes(names, args.testing)
 
 if __name__ == '__main__':
     main()
