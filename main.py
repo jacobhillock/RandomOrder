@@ -51,8 +51,6 @@ def add_list_header (line):
     list_regex = re.compile('^\s{2,}-')
     line += '\n'
 
-    print(list_regex.findall(line))
-
     if (list_regex.findall(line)):
         return line
     return '- ' + line
@@ -76,12 +74,8 @@ def replace_key_tokens(notes: str) -> str:
     tokens = {}
     with open('./.tokens.json', 'r') as file:
         tokens = loads_json(file.read())
-    
-    print(notes)
-    print(tokens)
-    
+        
     for key, value in tokens.items():
-        print(key)
         # `?<=` means to capture after this group
         # `?=` means to capture after this group
         regex = re.compile(f'((?<=\s)({key})(?=\s))')
@@ -114,8 +108,8 @@ def take_notes(people: list[str], testing: bool) -> None:
     print(f'wrote to file: "{file_name}"')
 
 def main() -> None:
-    os_system('cls' if os_name == 'nt' else 'clear')
     args = get_args()
+    os_system('cls' if os_name == 'nt' else 'clear')
 
     names = get_file()
     names = clean(names, args.exclude, args.fuzzyExclude)
