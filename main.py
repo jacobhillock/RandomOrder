@@ -6,19 +6,21 @@ from datetime import datetime
 from json import loads as loads_json
 import re
 
-def get_args () -> argparse.Namespace:
+
+def get_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description='A small app to randomize a list of people.\n'
         + 'The people we choose from are in "./people.txt"'
-        )
-    parser.add_argument('exclude', type=str, nargs='*', 
-        help='List of people to exclude')
+    )
+    parser.add_argument('exclude', type=str, nargs='*',
+                        help='List of people to exclude')
     parser.add_argument('-f', '--fuzzyExclude', action='store_true',
-        help='Flag to use the exclude list as a fuzzy (not need to include whole name) or not')
+                        help='Flag to use the exclude list as a fuzzy (not need to include whole name) or not')
     parser.add_argument('-t', '--testing', action='store_true',
-        help='Flag to write to a different file if testing new features')
+                        help='Flag to write to a different file if testing new features')
     args = parser.parse_args()
     return args
+
 
 def get_file() -> list[str]:
     names = []
@@ -28,10 +30,12 @@ def get_file() -> list[str]:
     names = list(filter(lambda name: len(name) > 0, names))
     return names
 
-def randomize (items: list[str]) -> list[str]:
+
+def randomize(items: list[str]) -> list[str]:
     return list(sorted(items, key=lambda x: .5 - random()))
 
-def clean (names: list[str], exclude_list: list[str], fuzzy: bool) -> list[str]:
+
+def clean(names: list[str], exclude_list: list[str], fuzzy: bool) -> list[str]:
     if fuzzy:
         search_results = [*names]
         for exclude in exclude_list:
@@ -40,14 +44,17 @@ def clean (names: list[str], exclude_list: list[str], fuzzy: bool) -> list[str]:
                 if exclude.lower() in name.lower():
                     matches.append(name)
             if len(matches) > 1:
-                print(f'{exclude} had multiple matches: {", ".join(matches)}. No matches will be removed')
+                print(
+                    f'{exclude} had multiple matches: {", ".join(matches)}. No matches will be removed')
             elif len(matches) == 1:
-                search_results = list(filter(lambda name: name not in matches, search_results))
+                search_results = list(
+                    filter(lambda name: name not in matches, search_results))
         return search_results
     else:
         return [item for item in names if item not in exclude_list]
 
-def add_list_header (line):
+
+def add_list_header(line):
     list_regex = re.compile('^\s{2,}-')
     line += '\n'
 
@@ -55,18 +62,21 @@ def add_list_header (line):
         return line
     return '- ' + line
 
+
 def transform_notes(notes: dict[str, list[str]]) -> str:
     data = ''
-    for key, value in notes.items():
+    for key in sorted(notes.keys(), key=lambda k: k.split(' ')[-1]):
+        value = notes[key]
         data += f'## {key}\n'
 
-        notes = list(filter(lambda note: note != '', value))
-        if len(notes) == 0:
-            notes = ['No notes or not present']
-        data += ''.join(map(add_list_header, notes))
+        notes_for_person = list(filter(lambda note: note != '', value))
+        if len(notes_for_person) == 0:
+            notes_for_person = ['No notes or not present']
+        data += ''.join(map(add_list_header, notes_for_person))
         data += '\n'
-    
+
     return data
+
 
 def replace_key_tokens(notes: str) -> str:
     if not exists('./.tokens.json'):
@@ -74,14 +84,15 @@ def replace_key_tokens(notes: str) -> str:
     tokens = {}
     with open('./.tokens.json', 'r') as file:
         tokens = loads_json(file.read())
-        
+
     for key, value in tokens.items():
         # `?<=` means to capture after this group
         # `?=` means to capture after this group
-        regex = re.compile(f'((?<=\s)({key})(?=\s))')
+        regex = re.compile(f'((?<=\W)({key})(?=\W))')
         notes = re.sub(regex, value, notes)
 
     return notes
+
 
 def take_notes(people: list[str], testing: bool) -> None:
     data = {}
@@ -92,9 +103,9 @@ def take_notes(people: list[str], testing: bool) -> None:
         while True:
             data[person].append(input('> '))
 
-            if len(data[person]) >=2 and data[person][-2:] == ['', '']:
+            if len(data[person]) >= 2 and data[person][-2:] == ['', '']:
                 break
-    
+
     print()
     notes = transform_notes(data)
     notes = replace_key_tokens(notes)
@@ -104,8 +115,9 @@ def take_notes(people: list[str], testing: bool) -> None:
     file_name = f'./notes/{date.date().isoformat()}{"_t" if testing else ""}.md'
     with open(file_name, 'w+') as file:
         file.write(notes)
-    
+
     print(f'wrote to file: "{file_name}"')
+
 
 def main() -> None:
     args = get_args()
@@ -115,10 +127,10 @@ def main() -> None:
     names = clean(names, args.exclude, args.fuzzyExclude)
     names = randomize(names)
 
-    print(', '.join( names))
-    print()
+    print(', '.join(names), '\n')
 
     take_notes(names, args.testing)
+
 
 if __name__ == '__main__':
     main()
