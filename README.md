@@ -19,4 +19,4 @@ hide people: `python main.py [PERSON,]`
 
 fuzzy hide: `python main.py -f [PERSON,]`
 - From the input list in `.people.txt` this hides partial matches if exactly one match
-  - eg `Moh` matches `Mohammed`
+  - eg `moh` matches `Mohammed`
