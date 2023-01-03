@@ -20,3 +20,22 @@ hide people: `python main.py [PERSON,]`
 fuzzy hide: `python main.py -f [PERSON,]`
 - From the input list in `.people.txt` this hides partial matches if exactly one match
   - eg `moh` matches `Mohammed`
+
+specify person file: `python main.py --file FILE_NAME`
+- if flag is `abc` for example, program will look for
+  - `abc.people.txt` and `abc.tokens.json`
+
+## During note taking
+use tokens:
+- if you have a token `PR` we will replace it for the following
+  - `> PR`
+  - `> PR.`
+  - `> Some PR`
+  - `> This PR, and that`
+- it will note replace
+  - `> PRs`
+  - `> pr`
+
+note commands:
+- having two back-to-back inputs that are blank go to the next person
+- having two back-to-back inputs that are `g` then `b` (go back) go to the previous person

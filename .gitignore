@@ -1,3 +1,5 @@
 .people.txt
 .tokens.json
+*.people.txt
+*.tokens.json
 notes

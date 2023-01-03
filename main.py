@@ -18,13 +18,14 @@ def get_args() -> argparse.Namespace:
                         help='Flag to use the exclude list as a fuzzy (not need to include whole name) or not')
     parser.add_argument('-t', '--testing', action='store_true',
                         help='Flag to write to a different file if testing new features')
-    args = parser.parse_args()
-    return args
+    parser.add_argument('--file', type=str, default='',
+                        help='Person file prefix, default blank')
+    return parser.parse_args()
 
 
-def get_file() -> list[str]:
+def get_file(prefix) -> list[str]:
     names = []
-    with open('./.people.txt', 'r+') as file:
+    with open(f'./{prefix}.people.txt', 'r+') as file:
         data = file.read()
         names = data.split('\n')
     names = list(filter(lambda name: len(name) > 0, names))
@@ -78,11 +79,13 @@ def transform_notes(notes: dict[str, list[str]]) -> str:
     return data
 
 
-def replace_key_tokens(notes: str) -> str:
-    if not exists('./.tokens.json'):
+def replace_key_tokens(notes: str, file_prefix: str) -> str:
+    file_name = f'./{file_prefix}.tokens.json'
+
+    if not exists(file_name):
         return notes
     tokens = {}
-    with open('./.tokens.json', 'r') as file:
+    with open(file_name, 'r') as file:
         tokens = loads_json(file.read())
 
     for key, value in tokens.items():
@@ -94,42 +97,63 @@ def replace_key_tokens(notes: str) -> str:
     return notes
 
 
-def take_notes(people: list[str], testing: bool) -> None:
+def note_cmd_check(notes: list[str], cmd: list[str]):
+    return len(notes) >= len(cmd) and notes[-1*len(cmd):] == cmd
+
+
+def take_notes(people: list[str]) -> None:
     data = {}
 
-    for person in people:
-        print(f'Notes for {person}:')
-        data[person] = []
-        while True:
-            data[person].append(input('> '))
+    i = 0
 
-            if len(data[person]) >= 2 and data[person][-2:] == ['', '']:
+    while i < len(people):
+        # Prevent bound issues
+        i = min(max(0, i), len(people) - 1)
+
+        person = people[i]
+
+        print(f'Notes for {person}:')
+        for note in data.get(person, []):
+            print(f'> {note}')
+        while True:
+            data[person] = data.get(person, list()) + [input('> ')]
+
+            if note_cmd_check(data[person], ['', '']):
+                i += 1
+                break
+            elif note_cmd_check(data[person], ['g', 'b']):
+                data[person] = data[person][:-2]
+                i -= 1
                 break
 
-    print()
-    notes = transform_notes(data)
-    notes = replace_key_tokens(notes)
-    print(notes)
-    date = datetime.now()
-
-    file_name = f'./notes/{date.date().isoformat()}{"_t" if testing else ""}.md'
-    with open(file_name, 'w+') as file:
-        file.write(notes)
-
-    print(f'wrote to file: "{file_name}"')
+    return data
 
 
 def main() -> None:
     args = get_args()
     os_system('cls' if os_name == 'nt' else 'clear')
 
-    names = get_file()
+    names = get_file(args.file)
     names = clean(names, args.exclude, args.fuzzyExclude)
     names = randomize(names)
 
     print(', '.join(names), '\n')
 
-    take_notes(names, args.testing)
+    data_for_notes = take_notes(names, args.testing, args.file)
+
+    print()
+    notes = transform_notes(data_for_notes)
+    notes = replace_key_tokens(notes, args.file)
+
+    print(notes)
+    date = datetime.now()
+
+    file_name = f'./notes/{date.date().isoformat()}' + \
+        ("_t" if args.testing else "") + f'_{args.file}' + '.md'
+    with open(file_name, 'w+') as file:
+        file.write(notes)
+
+    print(f'wrote to file: "{file_name}"')
 
 
 if __name__ == '__main__':
