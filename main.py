@@ -139,7 +139,7 @@ def main() -> None:
 
     print(', '.join(names), '\n')
 
-    data_for_notes = take_notes(names, args.testing, args.file)
+    data_for_notes = take_notes(names)
 
     print()
     notes = transform_notes(data_for_notes)
@@ -149,7 +149,8 @@ def main() -> None:
     date = datetime.now()
 
     file_name = f'./notes/{date.date().isoformat()}' + \
-        ("_t" if args.testing else "") + f'_{args.file}' + '.md'
+        ("_t" if args.testing else "") + \
+        (f'_{args.file}' if args.file != '' else "") + '.md'
     with open(file_name, 'w+') as file:
         file.write(notes)
 

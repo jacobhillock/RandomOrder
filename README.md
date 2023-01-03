@@ -1,5 +1,5 @@
 # Random Order Note Taker
-Version: v0.1
+Version: v0.1.1
 ## What it is
 
 ## Required files
