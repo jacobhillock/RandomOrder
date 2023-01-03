@@ -1,10 +1,11 @@
 from random import random
-from os import system as os_system, name as os_name
-from os.path import exists
+from os import system as os_system
 import argparse
 from datetime import datetime
 from json import loads as loads_json
 import re
+
+from src.file_utils import FS
 
 
 def get_args() -> argparse.Namespace:
@@ -24,10 +25,10 @@ def get_args() -> argparse.Namespace:
 
 
 def get_file(prefix) -> list[str]:
-    names = []
-    with open(f'./{prefix}.people.txt', 'r+') as file:
-        data = file.read()
-        names = data.split('\n')
+    fs = FS(__file__)
+    data = fs.get_file(f'{prefix}.people.txt')
+    names = data.split('\n')
+
     names = list(filter(lambda name: len(name) > 0, names))
     return names
 
@@ -80,9 +81,10 @@ def transform_notes(notes: dict[str, list[str]]) -> str:
 
 
 def replace_key_tokens(notes: str, file_prefix: str) -> str:
-    file_name = f'./{file_prefix}.tokens.json'
+    file_name = f'{file_prefix}.tokens.json'
+    fs = FS(__file__)
 
-    if not exists(file_name):
+    if not fs.exists(file_name):
         return notes
     tokens = {}
     with open(file_name, 'r') as file:
@@ -131,7 +133,7 @@ def take_notes(people: list[str]) -> None:
 
 def main() -> None:
     args = get_args()
-    os_system('cls' if os_name == 'nt' else 'clear')
+    os_system('cls' if FS.is_windows else 'clear')
 
     names = get_file(args.file)
     names = clean(names, args.exclude, args.fuzzyExclude)

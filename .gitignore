@@ -4,3 +4,4 @@
 *.tokens.json
 notes
 venv
+__pycache__
