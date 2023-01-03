@@ -1,0 +1,2 @@
+PyTermGUI==7.3.0
+typing_extensions==4.4.0
