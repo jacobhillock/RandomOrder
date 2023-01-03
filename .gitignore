@@ -3,3 +3,4 @@
 *.people.txt
 *.tokens.json
 notes
+venv
