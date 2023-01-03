@@ -25,8 +25,7 @@ def get_args() -> argparse.Namespace:
 
 
 def get_file(prefix) -> list[str]:
-    fs = FS(__file__)
-    data = fs.get_file(f'{prefix}.people.txt')
+    data = FS(__file__).get_file(f'{prefix}.people.txt')
     names = data.split('\n')
 
     names = list(filter(lambda name: len(name) > 0, names))
@@ -86,9 +85,8 @@ def replace_key_tokens(notes: str, file_prefix: str) -> str:
 
     if not fs.exists(file_name):
         return notes
-    tokens = {}
-    with open(file_name, 'r') as file:
-        tokens = loads_json(file.read())
+
+    tokens = loads_json(fs.get_file(file_name))
 
     for key, value in tokens.items():
         # `?<=` means to capture after this group
@@ -150,11 +148,11 @@ def main() -> None:
     print(notes)
     date = datetime.now()
 
-    file_name = f'./notes/{date.date().isoformat()}' + \
+    file_name = f'notes/{date.date().isoformat()}' + \
         ("_t" if args.testing else "") + \
         (f'_{args.file}' if args.file != '' else "") + '.md'
-    with open(file_name, 'w+') as file:
-        file.write(notes)
+
+    FS(__file__).write_file(file_name, notes)
 
     print(f'wrote to file: "{file_name}"')
 

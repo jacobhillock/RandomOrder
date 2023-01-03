@@ -27,6 +27,11 @@ class FS:
             file_data = file.read()
         return file_data
 
+    def write_file(self, file_name: str, contents: str) -> None:
+        file_path = self.get_file_path(file_name)
+        with open(file_path, 'w+') as file:
+            file.write(contents)
+
     def exists(self, file_name: str = '', file_path: str = '') -> bool:
         if file_path == '':
             file_path = self.get_file_path(file_name)
