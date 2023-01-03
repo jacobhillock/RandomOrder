@@ -1,4 +1,5 @@
 # Random Order Note Taker
+Version: v0.1
 ## What it is
 
 ## Required files
