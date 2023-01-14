@@ -1,110 +1,16 @@
-from random import random
-from os import system as os_system
-import argparse
 from datetime import datetime
-from json import loads as loads_json
-import re
 
-from src.file_utils import FS
-
-
-def get_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(
-        description='A small app to randomize a list of people.\n'
-        + 'The people we choose from are in "./people.txt"'
-    )
-    parser.add_argument('exclude', type=str, nargs='*',
-                        help='List of people to exclude')
-    parser.add_argument('-f', '--fuzzyExclude', action='store_true',
-                        help='Flag to use the exclude list as a fuzzy (not need to include whole name) or not')
-    parser.add_argument('-t', '--testing', action='store_true',
-                        help='Flag to write to a different file if testing new features')
-    parser.add_argument('--file', type=str, default='',
-                        help='Person file prefix, default blank')
-    return parser.parse_args()
+from src.note_taker import NoteTaker
+from src.terminal_utils import clear_screen
 
 
-def get_file(prefix) -> list[str]:
-    data = FS(__file__).get_file(f'{prefix}.people.txt')
-    names = data.split('\n')
-
-    names = list(filter(lambda name: len(name) > 0, names))
-    return names
-
-
-def randomize(items: list[str]) -> list[str]:
-    return list(sorted(items, key=lambda x: .5 - random()))
-
-
-def clean(names: list[str], exclude_list: list[str], fuzzy: bool) -> list[str]:
-    if fuzzy:
-        search_results = [*names]
-        for exclude in exclude_list:
-            matches = []
-            for name in names:
-                if exclude.lower() in name.lower():
-                    matches.append(name)
-            if len(matches) > 1:
-                print(
-                    f'{exclude} had multiple matches: {", ".join(matches)}. No matches will be removed')
-            elif len(matches) == 1:
-                search_results = list(
-                    filter(lambda name: name not in matches, search_results))
-        return search_results
-    else:
-        return [item for item in names if item not in exclude_list]
-
-
-def add_list_header(line):
-    list_regex = re.compile('^\s{2,}-')
-    line += '\n'
-
-    if (list_regex.findall(line)):
-        return line
-    return '- ' + line
-
-
-def transform_notes(notes: dict[str, list[str]]) -> str:
-    data = ''
-    for key in sorted(notes.keys(), key=lambda k: k.split(' ')[-1]):
-        value = notes[key]
-        data += f'## {key}\n'
-
-        notes_for_person = list(filter(lambda note: note != '', value))
-        if len(notes_for_person) == 0:
-            notes_for_person = ['No notes or not present']
-        data += ''.join(map(add_list_header, notes_for_person))
-        data += '\n'
-
-    return data
-
-
-def replace_key_tokens(notes: str, file_prefix: str) -> str:
-    file_name = f'{file_prefix}.tokens.json'
-    fs = FS(__file__)
-
-    if not fs.exists(file_name):
-        return notes
-
-    tokens = loads_json(fs.get_file(file_name))
-
-    for key, value in tokens.items():
-        # `?<=` means to capture after this group
-        # `?=` means to capture after this group
-        regex = re.compile(f'((?<=\W)({key})(?=\W))')
-        notes = re.sub(regex, value, notes)
-
-    return notes
-
-
-def note_cmd_check(notes: list[str], cmd: list[str]):
+def note_cmd_check(notes: list[str], cmd: list[str]) -> bool:
     return len(notes) >= len(cmd) and notes[-1*len(cmd):] == cmd
 
 
-def take_notes(people: list[str]) -> None:
-    data = {}
-
-    i = 0
+def take_notes(app: NoteTaker) -> None:
+    people: list[str] = app.randomize()
+    i: int = 0
 
     while i < len(people):
         # Prevent bound issues
@@ -113,48 +19,56 @@ def take_notes(people: list[str]) -> None:
         person = people[i]
 
         print(f'Notes for {person}:')
-        for note in data.get(person, []):
+        for note in app.get_notes_for_person(person):
             print(f'> {note}')
         while True:
-            data[person] = data.get(person, list()) + [input('> ')]
+            note = input('> ')
+            app.add_note(person, note)
 
-            if note_cmd_check(data[person], ['', '']):
+            notes = app.get_notes_for_person(person)
+            if note_cmd_check(notes, ['', '']):
                 i += 1
                 break
-            elif note_cmd_check(data[person], ['g', 'b']):
-                data[person] = data[person][:-2]
+            elif note_cmd_check(notes, ['g', 'b']):
+                app.set_notes_for_person(person, notes[:-2])
                 i -= 1
                 break
 
-    return data
-
 
 def main() -> None:
-    args = get_args()
-    os_system('cls' if FS.is_windows else 'clear')
+    clear_screen()
 
-    names = get_file(args.file)
-    names = clean(names, args.exclude, args.fuzzyExclude)
-    names = randomize(names)
+    app = NoteTaker(__file__, empty_note='No notes or not present')
+    app.log.toggle_print(False)
 
-    print(', '.join(names), '\n')
-
-    data_for_notes = take_notes(names)
+    take_notes(app)
 
     print()
-    notes = transform_notes(data_for_notes)
-    notes = replace_key_tokens(notes, args.file)
 
-    print(notes)
+    print(app.notes_as_md(True))
     date = datetime.now()
 
-    file_name = f'notes/{date.date().isoformat()}' + \
-        ("_t" if args.testing else "") + \
-        (f'_{args.file}' if args.file != '' else "") + '.md'
+    file_name = f'notes{app.fs.separator}{date.date().isoformat()}' + \
+        ("_t" if app.args.testing else "") + \
+        (f'_{app.args.file}' if app.args.file != '' else "") + '.md'
 
-    FS(__file__).write_file(file_name, notes)
+    app.fs.write_file(file_name, app.notes_as_md(True), True)
 
     print(f'wrote to file: "{file_name}"')
+
+
+def main2():
+    app = NoteTaker(__file__, 'DEBUG')
+    names = app.randomize()
+    for name in names:
+        app.add_note(name, 'note 1')
+        app.add_note(name, 'note 2')
+        app.add_note(name, 'note 3')
+        app.add_note(name, 'note 4')
+    app.add_note('JayBear 0', 'note 4 PR')
+
+    print(app)
+    print(app.notes_as_md(False))
 
 
 if __name__ == '__main__':
