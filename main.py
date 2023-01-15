@@ -57,19 +57,5 @@ def main() -> None:
     print(f'wrote to file: "{file_name}"')
 
 
-def main2():
-    app = NoteTaker(__file__, 'DEBUG')
-    names = app.randomize()
-    for name in names:
-        app.add_note(name, 'note 1')
-        app.add_note(name, 'note 2')
-        app.add_note(name, 'note 3')
-        app.add_note(name, 'note 4')
-    app.add_note('JayBear 0', 'note 4 PR')
-
-    print(app)
-    print(app.notes_as_md(False))
-
-
 if __name__ == '__main__':
     main()
