@@ -3,24 +3,33 @@ from src.args import get_args
 from src.file_utils import FS
 from src.logger import Logger
 import re
+from dataclasses import dataclass
+
+
+@dataclass
+class NotesConfig:
+    file: str
+    fuzzyExclude: bool
+    exclude: list[str]
+    log_level: str = 'WARN'
+    empty_note: str = ''
 
 
 class NoteTaker:
-    def __init__(self, main_file: str, log_level: str = 'WARN', empty_note: str = ''):
-        self.args = get_args()
+    def __init__(self, main_file: str, config: NotesConfig):
+        self.config: NotesConfig = config
         self.main_file: str = main_file
         self.fs: FS = FS(main_file)
         self.log: Logger = Logger(
-            main_file, self.fs.merge_file_paths('logs', 'log.txt'), log_level)
+            main_file, self.fs.merge_file_paths('logs', 'log.txt'), config.log_level)
         self.notes: dict[str, list[str]] = {}
-        self.empty_note = empty_note
         self.__load_people()
         self.__load_tokens()
 
     def __load_people(self) -> None:
         self.log.INFO('Parsing people file')
 
-        self.people_file = f'{self.args.file}.people.txt'
+        self.people_file = f'{self.config.file}.people.txt'
         self.log.INFO(f'{self.people_file=}')
 
         data: str = self.fs.get_file(self.people_file)
@@ -28,8 +37,8 @@ class NoteTaker:
         names = list(filter(lambda name: len(name) > 0, names))
         self.log.INFO(f'from file_{names=}')
 
-        fuzzy: bool = self.args.fuzzyExclude
-        exclude_list: list[str] = self.args.exclude
+        fuzzy: bool = self.config.fuzzyExclude
+        exclude_list: list[str] = self.config.exclude
         self.log.DEBUG(f'{fuzzy=} || {exclude_list=}')
 
         people: list[str] = []
@@ -56,7 +65,7 @@ class NoteTaker:
             self.notes[person] = list()
 
     def __load_tokens(self) -> None:
-        self.token_file = f'{self.args.file}.tokens.json'
+        self.token_file = f'{self.config.file}.tokens.json'
         self.log.INFO(f'{self.token_file=}')
         self.tokens = self.fs.get_json_file(self.token_file)
         self.log.INFO(f'{self.tokens=}')
@@ -94,7 +103,7 @@ class NoteTaker:
 
             notes_for_person = list(filter(lambda note: note != '', value))
             if len(notes_for_person) == 0:
-                notes_for_person = [self.empty_note]
+                notes_for_person = [self.config.empty_note]
             markdown += ''.join(map(self.__add_list_header, notes_for_person))
             markdown += '\n'
 

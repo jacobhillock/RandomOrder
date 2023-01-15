@@ -1,7 +1,8 @@
 from datetime import datetime
 
-from src.note_taker import NoteTaker
+from src.note_taker import NoteTaker, NotesConfig
 from src.terminal_utils import clear_screen
+from src.args import get_args
 
 
 def note_cmd_check(notes: list[str], cmd: list[str]) -> bool:
@@ -37,8 +38,11 @@ def take_notes(app: NoteTaker) -> None:
 
 def main() -> None:
     clear_screen()
+    args = get_args()
+    config = NotesConfig(args.file, args.fuzzyExclude,
+                         args.exclude, empty_note='No notes or not present')
 
-    app = NoteTaker(__file__, empty_note='No notes or not present')
+    app = NoteTaker(__file__, config)
     app.log.toggle_print(False)
 
     take_notes(app)
@@ -49,8 +53,8 @@ def main() -> None:
     date = datetime.now()
 
     file_name = f'notes{app.fs.separator}{date.date().isoformat()}' + \
-        ("_t" if app.args.testing else "") + \
-        (f'_{app.args.file}' if app.args.file != '' else "") + '.md'
+        ("_t" if args.testing else "") + \
+        (f'_{args.file}' if args.file != '' else "") + '.md'
 
     app.fs.write_file(file_name, app.notes_as_md(True), True)
 
