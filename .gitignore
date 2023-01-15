@@ -5,3 +5,5 @@
 notes
 venv
 __pycache__
+.mypy_cache
+logs
