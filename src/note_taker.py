@@ -11,6 +11,7 @@ class NotesConfig:
     file: str
     fuzzyExclude: bool
     exclude: list[str]
+    front: list[str]
     log_level: str = 'WARN'
     empty_note: str = ''
 
@@ -78,8 +79,33 @@ class NoteTaker:
             return line
         return '- ' + line
 
+    def __get_front(self) -> list[str]:
+        if len(self.config.front) == 0:
+            return []
+
+        names = list(self.notes.keys())
+        front = []
+        if self.config.fuzzyExclude:
+            for fronts in self.config.front:
+                matches = []
+                for name in names:
+                    if fronts.lower() in name.lower():
+                        matches.append(name)
+                if len(matches) > 1:
+                    self.log.WARN(
+                        f'{fronts} had multiple matches: {", ".join(matches)}. No matches will be removed')
+                elif len(matches) == 1:
+                    front.append(matches[0])
+        else:
+            front = [item for item in names if item in self.config.front]
+        
+        return front
+
     def randomize(self) -> list[str]:
-        return list(sorted(self.notes.keys(), key=lambda x: .5 - random()))
+        front = self.__get_front()
+
+        print(f'{front=}')
+        return front + list(sorted([person for person in self.notes.keys() if person not in front], key=lambda x: .5 - random()))
 
     def get_notes_for_person(self, name: str) -> list[str]:
         return self.notes.get(name, [])

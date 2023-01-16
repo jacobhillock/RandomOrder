@@ -11,6 +11,7 @@ def note_cmd_check(notes: list[str], cmd: list[str]) -> bool:
 
 def take_notes(app: NoteTaker) -> None:
     people: list[str] = app.randomize()
+    print(f'{", ".join(people)}')
     i: int = 0
 
     while i < len(people):
@@ -40,7 +41,7 @@ def main() -> None:
     clear_screen()
     args = get_args()
     config = NotesConfig(args.file, args.fuzzyExclude,
-                         args.exclude, empty_note='No notes or not present')
+                         args.exclude, args.order, empty_note='No notes or not present')
 
     app = NoteTaker(__file__, config)
     app.log.toggle_print(False)
