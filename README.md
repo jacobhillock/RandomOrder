@@ -22,6 +22,9 @@ fuzzy hide: `python main.py -f [PERSON,]`
 - From the input list in `.people.txt` this hides partial matches if exactly one match
   - eg `moh` matches `Mohammed`
 
+random only: `python main.py -r`
+- Only print the random order
+
 specify person file: `python main.py --file FILE_NAME`
 - if flag is `abc` for example, program will look for
   - `abc.people.txt` and `abc.tokens.json`

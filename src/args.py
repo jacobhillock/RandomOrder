@@ -1,5 +1,6 @@
 import argparse
 
+
 def get_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description='A small app to randomize a list of people.\n'
@@ -13,6 +14,8 @@ def get_args() -> argparse.Namespace:
                         help='Allows you to specify a static list of people in the front, uses the fuzzy flag also')
     parser.add_argument('-t', '--testing', action='store_true',
                         help='Flag to write to a different file if testing new features')
+    parser.add_argument('-r', '--randOnly', action='store_true',
+                        help='Flag to only receive the random order')
     parser.add_argument('--file', type=str, default='',
                         help='Person file prefix, default blank')
     return parser.parse_args()

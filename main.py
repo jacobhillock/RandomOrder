@@ -38,7 +38,6 @@ def take_notes(app: NoteTaker) -> None:
 
 
 def main() -> None:
-    clear_screen()
     args = get_args()
     config = NotesConfig(args.file, args.fuzzyExclude,
                          args.exclude, args.order, empty_note='No notes or not present')
@@ -46,6 +45,12 @@ def main() -> None:
     app = NoteTaker(__file__, config)
     app.log.toggle_print(False)
 
+    if args.randOnly:
+        people: list[str] = app.randomize()
+        print(f'{", ".join(people)}')
+        return
+
+    clear_screen()
     take_notes(app)
 
     print()
